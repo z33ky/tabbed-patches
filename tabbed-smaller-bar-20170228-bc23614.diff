@@ -1,0 +1,13 @@
+diff --git a/tabbed.c b/tabbed.c
+index 9a44795..effb0c7 100644
+--- a/tabbed.c
++++ b/tabbed.c
+@@ -970,7 +970,7 @@ setup(void)
+ 	screen = DefaultScreen(dpy);
+ 	root = RootWindow(dpy, screen);
+ 	initfont(font);
+-	bh = dc.h = dc.font.height + 2;
++	bh = dc.h = dc.font.height - 2;
+ 
+ 	/* init atoms */
+ 	wmatom[WMDelete] = XInternAtom(dpy, "WM_DELETE_WINDOW", False);

@@ -1,0 +1,71 @@
+diff --git a/tabbed.c b/tabbed.c
+index 9a44795..5f00a5d 100644
+--- a/tabbed.c
++++ b/tabbed.c
+@@ -258,7 +259,7 @@ configurenotify(const XEvent *e)
+ 		dc.drawable = XCreatePixmap(dpy, root, ww, wh,
+ 		              DefaultDepth(dpy, screen));
+ 		if (sel > -1)
+-			resize(sel, ww, wh - bh);
++			resize(sel, ww, wh - (nclients > 1 ? bh : 0));
+ 		XSync(dpy, False);
+ 	}
+ }
+@@ -274,7 +275,7 @@ configurerequest(const XEvent *e)
+ 		wc.x = 0;
+ 		wc.y = bh;
+ 		wc.width = ww;
+-		wc.height = wh - bh;
++		wc.height = wh - (nclients > 1 ? bh : 0);
+ 		wc.border_width = 0;
+ 		wc.sibling = ev->above;
+ 		wc.stack_mode = ev->detail;
+@@ -330,6 +332,9 @@ drawbar(void)
+ 		return;
+ 	}
+ 
++	if (nclients < 1)
++		return;
++
+ 	width = ww;
+ 	cc = ww / tabwidth;
+ 	if (nclients > cc)
+@@ -455,7 +462,7 @@ focus(int c)
+ 	if (c < 0 || c >= nclients)
+ 		return;
+ 
+-	resize(c, ww, wh - bh);
++	resize(c, ww, wh - (nclients > 1 ? bh : 0));
+ 	XRaiseWindow(dpy, clients[c]->win);
+ 	XSetInputFocus(dpy, clients[c]->win, RevertToParent, CurrentTime);
+ 	sendxembed(c, XEMBED_FOCUS_IN, XEMBED_FOCUS_CURRENT, 0, 0);
+@@ -697,7 +704,7 @@ manage(Window w)
+ 		XEvent e;
+ 
+ 		XWithdrawWindow(dpy, w, 0);
+-		XReparentWindow(dpy, w, win, 0, bh);
++		XReparentWindow(dpy, w, win, 0, nclients > 0 ? bh : 0);
+ 		XSelectInput(dpy, w, PropertyChangeMask |
+ 		             StructureNotifyMask | EnterWindowMask);
+ 		XSync(dpy, False);
+@@ -715,6 +722,9 @@ manage(Window w)
+ 		c = ecalloc(1, sizeof *c);
+ 		c->win = w;
+ 
++		if(nclients == 1) {
++			XMoveResizeWindow(dpy, clients[0]->win, 0, bh, ww, wh - bh);
++		}
+ 		nclients++;
+ 		clients = erealloc(clients, sizeof(Client *) * nclients);
+ 
+@@ -1146,6 +1190,10 @@ unmanage(int c)
+ 		else if (fillagain && running)
+ 			spawn(NULL);
+ 	} else {
++		if(nclients == 1) {
++			XMoveResizeWindow(dpy, clients[0]->win, 0, 0, ww, wh);
++		}
++
+ 		if (lastsel >= nclients)
+ 			lastsel = nclients - 1;
+ 		else if (lastsel > c)

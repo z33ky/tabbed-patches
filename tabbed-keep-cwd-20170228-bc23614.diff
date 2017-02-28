@@ -1,0 +1,58 @@
+diff --git a/tabbed.c b/tabbed.c
+index 9a44795..5f00a5d 100644
+--- a/tabbed.c
++++ b/tabbed.c
+@@ -49,7 +49,7 @@
+ 
+ enum { ColFG, ColBG, ColLast };       /* color */
+ enum { WMProtocols, WMDelete, WMName, WMState, WMFullscreen,
+-       XEmbed, WMSelectTab, WMLast }; /* default atoms */
++       XEmbed, WMSelectTab, WMPid, WMLast }; /* default atoms */
+ 
+ typedef union {
+ 	int i;
+@@ -981,6 +1001,7 @@ setup(void)
+ 	wmatom[WMSelectTab] = XInternAtom(dpy, "_TABBED_SELECT_TAB", False);
+ 	wmatom[WMState] = XInternAtom(dpy, "_NET_WM_STATE", False);
+ 	wmatom[XEmbed] = XInternAtom(dpy, "_XEMBED", False);
++	wmatom[WMPid] = XInternAtom(dpy, "_NET_WM_PID", False);
+ 
+ 	/* init appearance */
+ 	wx = 0;
+@@ -1075,11 +1096,36 @@ sigchld(int unused)
+ void
+ spawn(const Arg *arg)
+ {
++	int pid = -1;
++	if(sel >= 0) {
++		Atom adummy;
++		int idummy;
++		unsigned long ldummy;
++		unsigned char *p = NULL;
++		XGetWindowProperty(dpy, clients[sel]->win, wmatom[WMPid], 0L, 1024L, False, XA_CARDINAL, &adummy, &idummy, &ldummy, &ldummy, &p);
++		if(p) {
++			pid = *(long*)p;
++		}
++		XFree(p);
++	}
+ 	if (fork() == 0) {
+ 		if(dpy)
+ 			close(ConnectionNumber(dpy));
+ 
+ 		setsid();
++
++		char buf[32], cwd[256];
++		const ssize_t pos = snprintf(buf, sizeof(buf), "/proc/%d/cwd", pid);
++		if(pos < sizeof(buf)) {
++			const ssize_t read = readlink(buf, cwd, sizeof(cwd) - 1) + 1;
++			if(read > 0 && read < sizeof(cwd)) {
++				int dir;
++				cwd[read - 1] = 0;
++				dir = chdir(cwd);
++				(void)dir;
++			}
++		}
++
+ 		if (arg && arg->v) {
+ 			execvp(((char **)arg->v)[0], (char **)arg->v);
+ 			fprintf(stderr, "%s: execvp %s", argv0,
