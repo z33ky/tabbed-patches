@@ -8,7 +8,3 @@ The visual result is the same, the implementation adds/removes the bar on `{,un}
 #### `tabbed-keep-cwd-20170228-bc23614.diff`
 
 Use cwd of the process in the current tab when spawning a new process.
-
-#### `tabbed-smaller-bar-20170228-bc23614.diff`
-
-Reduce size of the tab bar.
